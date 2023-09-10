@@ -1,40 +1,39 @@
-import { useDispatch, useSelector } from "react-redux";
-import { useAsync, useFetchAndLoad } from "../../hooks";
-import { retrieveMoviesNowPlaying } from "../../services";
+/* eslint-disable */
+import { useDispatch } from "react-redux";
+import { useMultiAsync, useMultiFetchAndLoad } from "../../hooks";
+import { retrieveMovies } from "../../services";
 import { moviesDbApi } from "../../api";
-import { setNowPlaying } from "../../redux/states/movieDb";
-import { MoviesDBStore } from "../../redux/store";
+import { setNowPlaying, setPopular, setTopRated } from "../../redux/states/movieDb";
+import NowPlaying from "./components/NowPlaying";
+import TopRated from "./components/TopRated";
+import Popular from "./components/Popular";
 
 function Home() {
 	const dispatch = useDispatch();
 
-	const movieDbState = useSelector((store: MoviesDBStore) => store.movieDb);
-	const { nowPlaying } = movieDbState;
+	const { loading, callMultiEndpoint } = useMultiFetchAndLoad();
 
-	const { loading, callEndpoint } = useFetchAndLoad();
+	const getMovies = () => callMultiEndpoint(retrieveMovies(moviesDbApi));
 
-	const getMoviesNowPlaying = () => callEndpoint(retrieveMoviesNowPlaying(moviesDbApi));
-
-	const setMoviesNowPlaying = (data: unknown) => {
-		dispatch(setNowPlaying(data));
+	const setMovies = (data: any) => {
+		dispatch(setNowPlaying(data[0]));
+		dispatch(setPopular(data[1]));
+		dispatch(setTopRated(data[2]));
 	};
 
-	useAsync(getMoviesNowPlaying, setMoviesNowPlaying, () => {}, []);
+	useMultiAsync(getMovies, setMovies, () => {}, []);
 
 	return (
 		<div>
-			{loading ? <h2>Loading...</h2> : <h2>Loaded!</h2>}
-			<pre>
-				<code>
-					{JSON.stringify(
-						{
-							nowPlaying,
-						},
-						null,
-						2
-					)}
-				</code>
-			</pre>
+			{loading ? (
+				<h2>Loading...</h2>
+			) : (
+				<div className="space-y-4">
+					<NowPlaying />
+					<Popular />
+					<TopRated />
+				</div>
+			)}
 		</div>
 	);
 }
